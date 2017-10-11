@@ -451,7 +451,7 @@ class MercuryApiController extends WikiaController {
 
 		$this->response->setFormat( WikiaResponse::FORMAT_JSON );
 		$this->response->setCacheValidity( $cacheValidity );
-		$this->response->setVal( 'data', $data );
+		$this->response->setVal( 'data', [] );
 	}
 
 	public function getArticle() {
