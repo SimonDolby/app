@@ -448,6 +448,7 @@ class MercuryApiController extends WikiaController {
 				'redirectTo' => $interWikiUrl,
 			];
 		}
+		throw new NotFoundApiException();
 
 		$this->response->setFormat( WikiaResponse::FORMAT_JSON );
 		$this->response->setCacheValidity( $cacheValidity );
