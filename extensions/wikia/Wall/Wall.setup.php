@@ -156,7 +156,6 @@ $wgHooks['FormatForumLinks'][] = 'WallHooksHelper::onFormatForumLinks';
 
 // Fix URLs when purging after adding a thread/post
 $wgHooks['TitleGetSquidURLs'][] = 'WallHooksHelper::onTitleGetSquidURLs';
-$wgHooks['ArticleCommentGetSquidURLs'][] = 'WallHooksHelper::onArticleCommentGetSquidURLs';
 
 // Fix User_talk links for profile page diff on wall enabled wikis
 // VOLDEV-66

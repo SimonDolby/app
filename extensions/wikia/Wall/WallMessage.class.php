@@ -558,14 +558,8 @@ class WallMessage {
 	}
 
 	public function getWallOwner() {
-		if ( $this->title->inNamespace( NS_USER_WALL_MESSAGE ) ) {
-			$ownerUserName = $this->getTitleBaseText( $this->title );
-			return User::newFromName( $ownerUserName, false );
-		}
-
-		// horribile visu: Forum threads treat board name as user!
-		$boardName = $this->getTitleBaseText( $this->getArticleTitle() );
-		return User::newFromName( $boardName, false );
+		$parentPageName = $this->getTitleBaseText( $this->getArticleTitle() );
+		return User::newFromName( $parentPageName, false );
 	}
 
 	public function getWallPageUrl() {
@@ -578,15 +572,6 @@ class WallMessage {
 	public function getArticleTitle(): Title {
 		$title = $this->getTitle();
 
-		// Wall Threads always belong to the user wall they were posted on
-		// No need to check comments index here
-		if ( $title->inNamespace( NS_USER_WALL_MESSAGE ) ) {
-			$parentPageText = $this->getTitleBaseText( $title );
-
-			return Title::makeTitle( NS_USER_WALL, $parentPageText );
-		}
-
-		// Forum Threads may have been moved to another board - use comments index as data source
 		try {
 			$commentsIndexEntry = $this->getCommentsIndexEntry();
 			$parentPageId = $commentsIndexEntry->getParentPageId();

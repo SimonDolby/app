@@ -264,8 +264,12 @@ class ArticleComment {
 		}
 
 		// get user that created this comment
-		$this->mUser = User::newFromId( $this->mFirstRevision->getUser() );
-		$this->mUser->setName( $this->mFirstRevision->getUserText() );
+		$authorId = $this->mFirstRevision->getUser();
+		if ( $authorId ) {
+			$this->mUser = User::newFromId( $authorId );
+		} else {
+			$this->mUser = User::newFromName( $this->mFirstRevision->getUserText(), false );
+		}
 
 		$this->isRevisionLoaded = true;
 		return true;
@@ -1053,7 +1057,7 @@ class ArticleComment {
 		$retVal = self::doSaveAsArticle( $text, $article, $user, $metadata );
 		$res = ArticleComment::doAfterPost( $retVal, $article, $parentId );
 
-		ArticleComment::doPurge( $title, $commentTitle );
+		ArticleComment::doPurge( $title );
 
 		return [ $retVal, $article, $res ];
 	}
@@ -1061,59 +1065,18 @@ class ArticleComment {
 	/**
 	 * @static
 	 * @param $title Title
-	 * @param $commentTitle Title
 	 */
-	static public function doPurge( $title, $commentTitle ) {
-		global $wgArticleCommentsLoadOnDemand;
-
+	static public function doPurge( Title $title ) {
 		// make sure our comment list is refreshed from the master RT#141861
 		$commentList = ArticleCommentList::newFromTitle( $title );
 		$commentList->purge();
 		$commentList->getCommentList( true );
 
-		// Purge squid proxy URLs for ajax loaded content if we are lazy loading
-		if ( !empty( $wgArticleCommentsLoadOnDemand ) ) {
-			$urls = self::getSquidURLs( $title );
-			$squidUpdate = new SquidUpdate( $urls );
-			$squidUpdate->doUpdate();
-
-		// Otherwise, purge the article
-		} else {
-
-			// BugID: 2483 purge the parent article when new comment is posted
-			// BugID: 29462, purge the ACTUAL parent, not the root page... $#%^!
-			$parentTitle = Title::newFromText( $commentTitle->getBaseText() );
-
-			if ( $parentTitle ) {
-				$parentTitle->invalidateCache();
-				$parentTitle->purgeSquid();
-			}
+		global $wgArticleCommentsNamespaces;
+		if ( $title->inNamespaces( $wgArticleCommentsNamespaces ) ) {
+			$key = ArticleComment::getSurrogateKey( $title->getArticleID() );
+			Wikia::purgeSurrogateKey( $key );
 		}
-	}
-
-	/**
-	 * @param Title $title
-	 * @return array
-	 */
-	public static function getSquidURLs( Title $title ) {
-		$urls = [];
-		$articleId = $title->getArticleId();
-
-		// Only page 1 is cached in varnish when lazy loading is on
-		// Other pages load with action=ajax&rs=ArticleCommentsAjax&method=axGetComments
-		$urls[] = ArticleCommentsController::getUrl(
-			'Content',
-			[
-				'format' => 'html',
-				'articleId' => $articleId,
-				'page' => 1,
-				'skin' => 'true'
-			]
-		);
-
-		Hooks::run( 'ArticleCommentGetSquidURLs', [ $title, &$urls ] );
-
-		return $urls;
 	}
 
 	/**
@@ -1560,8 +1523,7 @@ class ArticleComment {
 	 * @return boolean
 	 */
 	static public function isLoadingOnDemand() {
-		$app = F::app();
-		return $app->wg->ArticleCommentsLoadOnDemand && !$app->checkSkin( 'wikiamobile' );
+		return !F::app()->checkSkin( 'wikiamobile' );
 	}
 
 	/**

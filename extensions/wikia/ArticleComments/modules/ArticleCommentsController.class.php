@@ -94,14 +94,11 @@ class ArticleCommentsController extends WikiaController {
 		$this->getCommentsData( $title, $page );
 		$this->isMiniEditorEnabled = ArticleComment::isMiniEditorEnabled();
 
-		// Uncomment this when surrogate key purging works
-		//$this->wg->Out->tagWithSurrogateKeys( ArticleComment::getSurrogateKey($articleId) );
 
-		// When lazy loading this request it shouldn't be cached in the browser
-		if ( !empty( $this->wg->ArticleCommentsLoadOnDemand ) ) {
-			$this->response->setCachePolicy( WikiaResponse::CACHE_PRIVATE );
-			$this->response->setCacheValidity( WikiaResponse::CACHE_DISABLED );
-		}
+		$this->wg->Out->tagWithSurrogateKeys( ArticleComment::getSurrogateKey( $articleId ) );
+
+		$this->response->setCachePolicy( WikiaResponse::CACHE_PUBLIC );
+		$this->response->setCacheValidity( WikiaResponse::CACHE_SHORT );
 	}
 
 	/**
